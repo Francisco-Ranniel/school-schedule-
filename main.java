@@ -2,145 +2,107 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        List<Student> students = new ArrayList<>();
+        Scanner scan = new Scanner(System.in);
 
-        
-        System.out.println("Enter student names (type 'done' when finished):");
+        // Queues for students and sections
+        Queue<String> student = new LinkedList<>();
+        Queue<String> section = new LinkedList<>();
+
+        // Input students
+        System.out.println("Enter student names (type 'done' to finish):");
         while (true) {
-            System.out.print("Enter name: ");
-            String name = scanner.nextLine();
-            if (name.equalsIgnoreCase("done")) {
+            System.out.println("Enter student name:");
+            String input = scan.nextLine();
+            
+            if (input.equalsIgnoreCase("done")) {
+                System.out.println("Student input completed.");
                 break;
             }
-            if (name.matches("^[a-zA-Z\\s]+$")) {
-                students.add(new Student(name, "Unassigned"));
+
+            // Validate input to ensure it contains only letters and is not empty
+            if (!input.trim().isEmpty() && input.matches("[a-zA-Z]+")) {
+                student.offer(input);
             } else {
-                System.out.println("Invalid input. Please enter a valid name (letters only).\n");
+                System.out.println("Invalid input. Please enter a non-empty name with letters only.");
             }
         }
 
-        
-        System.out.println("\nAssign sections to the students.");
-        for (Student student : students) {
-            System.out.println("Assigning a section for: " + student.getName());
-            int sectionChoice;
-            while (true) {
-                System.out.println("Select a section:");
-                System.out.println("1. IT211A");
-                System.out.println("2. IT211B");
-                System.out.println("3. IT211C");
-                System.out.print("Enter your choice (1/2/3): ");
-                String input = scanner.nextLine();
+        // Assign students to sections
+        System.out.println("Assign students to sections (A or B):");
+        while (!student.isEmpty()) {
+            System.out.println("Enter section for " + student.peek() + " (A or B):");
+            String sectionInput = scan.nextLine();
 
-                if (input.matches("\\d+")) {
-                    sectionChoice = Integer.parseInt(input);
-                    if (sectionChoice >= 1 && sectionChoice <= 3) {
-                        break;
-                    }
-                }
-                System.out.println("Invalid input. Please enter a number between 1 and 3.\n");
+            if (sectionInput.equalsIgnoreCase("A")) {
+                section.offer(student.poll() + " - Section A");
+            } else if (sectionInput.equalsIgnoreCase("B")) {
+                section.offer(student.poll() + " - Section B");
+            } else {
+                System.out.println("Invalid section. Please enter A or B.");
             }
-
-            Student assignedStudent = switch (sectionChoice) {
-                case 1 -> new IT211A(student.getName());
-                case 2 -> new IT211B(student.getName());
-                case 3 -> new IT211C(student.getName());
-                default -> throw new IllegalStateException("Unexpected value: " + sectionChoice);
-            };
-            students.set(students.indexOf(student), assignedStudent); 
-            assignedStudent.displayDetails();
         }
 
-        
-        System.out.println("\nAll students have been assigned to sections.");
-        System.out.println("");
-        System.out.println("\nType 'schedule' to see the full schedule for all students.");
+        // Display assigned sections
+        System.out.println("Final section assignments:");
+        for (String entry : section) {
+            System.out.println(entry);
+        }
 
+        // Schedule subclasses
+        Schedule sectionASchedule = new SectionASchedule();
+        Schedule sectionBSchedule = new SectionBSchedule();
+
+        // Endless search functionality
         while (true) {
-            String command = scanner.nextLine();
-            if (command.equalsIgnoreCase("schedule")) {
-                for (Student student : students) {
-                    student.displayFullSchedule(); 
+            System.out.println("Search for a student by name (type 'exit' to quit):");
+            String searchName = scan.nextLine();
+
+            if (searchName.equalsIgnoreCase("exit")) {
+                System.out.println("Exiting search...");
+                break;
+            }
+
+            boolean found = false;
+            for (String entry : section) {
+                String studentName = entry.split(" - ")[0];
+                if (studentName.equalsIgnoreCase(searchName)) {
+                    System.out.println("Found: " + entry);
+                    if (entry.contains("Section A")) {
+                        System.out.println("Schedule: " + sectionASchedule.getSchedule());
+                    } else if (entry.contains("Section B")) {
+                        System.out.println("Schedule: " + sectionBSchedule.getSchedule());
+                    }
+                    found = true;
+                    break;
                 }
-                break; 
-            } else {
-                System.out.println("Invalid command. Please type 'schedule' to see the full schedule.");
+            }
+
+            if (!found) {
+                System.out.println("Student not found in any section.");
             }
         }
 
-        // Exit message
-        System.out.println("\nGoodbye!");
-        scanner.close();
+        scan.close();
     }
 }
 
-class Student {
-    private final String name;
-    private final String section;
-
-    public Student(String name, String section) {
-        this.name = name;
-        this.section = section;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getSection() {
-        return section;
-    }
-
-    public void displayDetails() {
-        System.out.println("Student Name: " + name);
-        System.out.println("Section: " + section);
-    }
-
-    public void displayFullSchedule() {
-        System.out.println("");
-        System.out.println("Full schedule for " + name + ":");
-    }
+// Abstract class for schedules
+abstract class Schedule {
+    public abstract String getSchedule();
 }
 
-class IT211A extends Student {
-    public IT211A(String name) {
-        super(name, "IT211A");
-    }
-
+// Schedule for Section A
+class SectionASchedule extends Schedule {
     @Override
-    public void displayFullSchedule() {
-        super.displayFullSchedule();
-        System.out.println("Monday: 8:00 AM - 10:00 AM (Programming 1)");
-        System.out.println("Wednesday: 1:00 PM - 3:00 PM (Data Structures)");
-        System.out.println("Friday: 10:00 AM - 12:00 PM (Database Systems)");
+    public String getSchedule() {
+        return "Monday to Friday: 8 AM - 12 PM";
     }
 }
 
-class IT211B extends Student {
-    public IT211B(String name) {
-        super(name, "IT211B");
-    }
-
+// Schedule for Section B
+class SectionBSchedule extends Schedule {
     @Override
-    public void displayFullSchedule() {
-        super.displayFullSchedule();
-        System.out.println("Tuesday: 9:00 AM - 11:00 AM (Web Development)");
-        System.out.println("Thursday: 2:00 PM - 4:00 PM (Operating Systems)");
-        System.out.println("Saturday: 8:00 AM - 10:00 AM (Networking Basics)");
-    }
-}
-
-class IT211C extends Student {
-    public IT211C(String name) {
-        super(name, "IT211C");
-    }
-
-    @Override
-    public void displayFullSchedule() {
-        super.displayFullSchedule();
-        System.out.println("Monday: 10:00 AM - 12:00 PM (Software Engineering)");
-        System.out.println("Wednesday: 3:00 PM - 5:00 PM (Artificial Intelligence)");
-        System.out.println("Friday: 1:00 PM - 3:00 PM (Mobile App Development)");
+    public String getSchedule() {
+        return "Monday to Friday: 1 PM - 5 PM";
     }
 }
